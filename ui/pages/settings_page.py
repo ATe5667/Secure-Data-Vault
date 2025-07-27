@@ -1,8 +1,10 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QComboBox
+from PyQt6.QtCore import Qt, pyqtSignal
 from ui.themes import apply_theme
 
 class SettingsPage(QWidget):
+    timeout_changed = pyqtSignal(int)
+
     def __init__(self):
         super().__init__()
 
@@ -15,10 +17,17 @@ class SettingsPage(QWidget):
         self.theme_button = QPushButton("Switch to Light Theme")
         self.theme_button.clicked.connect(self.toggle_theme)
 
+        self.timeout_box = QComboBox()
+        self.timeout_box.addItems(["30 seconds", "1 minute", "2 minutes", "5 minutes"])
+
         layout = QVBoxLayout()
         layout.addWidget(label)
+        layout.addWidget(QLabel("Auto-lock timeout:"))
+        layout.addWidget(self.timeout_box)
         layout.addWidget(self.theme_button)
         layout.addStretch(1)
+
+        self.timeout_box.currentIndexChanged.connect(self._on_timeout_changed)
 
         self.setLayout(layout)
 
@@ -31,3 +40,7 @@ class SettingsPage(QWidget):
             apply_theme("dark")
             self.current_theme = "dark"
             self.theme_button.setText("Switch to Light Theme")
+
+    def _on_timeout_changed(self, index):
+        values = [30_000, 60_000, 120_000, 300_000]  # in milliseconds
+        self.timeout_changed.emit(values[index])

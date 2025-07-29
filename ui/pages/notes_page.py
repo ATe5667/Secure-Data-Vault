@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QScrollArea, QFrame, QHBoxLayout, QTextEdit, QMessageBox
+from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QScrollArea, QFrame, QHBoxLayout, QLineEdit
 from ui.note_editor import NoteEditor
 from ui.notes_manager import save_notes, load_notes
 
@@ -7,6 +7,7 @@ class NotesPage(QWidget):
         super().__init__()
 
         self.notes = load_notes()
+        self.filtered_notes = self.notes.copy()
 
         header = QHBoxLayout()
         label = QLabel("Secure Data Vault - Notes")
@@ -28,6 +29,12 @@ class NotesPage(QWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(scroll_content)
 
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Search notes...")
+        self.search_bar.textChanged.connect(self.filter_notes)
+
+        header.addWidget(self.search_bar)
+
         layout = QVBoxLayout()
         layout.addLayout(header)
         layout.addWidget(scroll_area)
@@ -36,8 +43,8 @@ class NotesPage(QWidget):
 
         self.refresh_notes()
 
-    def add_note(self, title, content):
-        note = {"title": title, "content": content}
+    def add_note(self, title, content, files):
+        note = {"title": title, "content": content, "files": files}
         self.notes.append(note)
         save_notes(self.notes)
 
@@ -57,13 +64,14 @@ class NotesPage(QWidget):
     def create_note(self):
         dialog = NoteEditor(self)
         if dialog.exec() and dialog.saved:
-            self.add_note(dialog.title, dialog.content)
+            self.add_note(dialog.title, dialog.content, dialog.attached_files)
 
     def view_note(self, note):
         dialog = NoteEditor(self, existing_note=note)
         if dialog.exec() and dialog.saved:
             note["title"] = dialog.title
             note["content"] = dialog.content
+            note["files"] = dialog.attached_files
             self.refresh_notes()
 
     def refresh_notes(self):
@@ -74,7 +82,7 @@ class NotesPage(QWidget):
                 child.widget().deleteLater()
 
         # Redraw all notes without modifying self.notes
-        for note in self.notes:
+        for note in self.filtered_notes:
             card = QFrame()
             card.setFrameShape(QFrame.Shape.StyledPanel)
             card.setStyleSheet("background-color: #f0f0f0; padding: 10px; border-radius: 8px;")
@@ -87,3 +95,14 @@ class NotesPage(QWidget):
             card_layout.addWidget(title_label)
             card.setLayout(card_layout)
             self.note_container.addWidget(card)
+
+    def filter_notes(self, text):
+        search = text.strip().lower()
+        if not search:
+            self.filtered_notes = self.notes.copy()
+        else:
+            self.filtered_notes = [
+                note for note in self.notes
+                if search in note["title"].lower() or search in note["content"].lower()
+            ]
+        self.refresh_notes()

@@ -18,7 +18,7 @@ def get_key():
 fernet = Fernet(get_key())
 
 def save_notes(notes):
-    data = [{"title": note["title"], "content": note["content"]} for note in notes]
+    data = [{"title": note["title"], "content": note["content"], "files": note.get("files", [])} for note in notes]
     json_data = json.dumps(data).encode()
     encrypted = fernet.encrypt(json_data)
     with open(NOTES_FILE, "wb") as f:

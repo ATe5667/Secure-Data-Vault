@@ -9,7 +9,7 @@ The application is currently under development.
 2) Auto-lock
 3) Themes
 
-## Excepted Features:
+## Expected Features:
 1) Notes
 2) Passwords
 3) Password generator
